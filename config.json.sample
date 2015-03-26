@@ -1,0 +1,13 @@
+{
+    "username": "",
+    "password": "",
+
+    "repos": [
+        {
+            "user": "xxx",
+            "name": "xxx",
+            "labels": "xxx",
+            "command": "xxx"
+        }
+    ]
+}

@@ -95,7 +95,7 @@
         if (delayed == null) {
           delayed = false;
         }
-        logger.log("deploying " + id);
+        logger.info("deploying " + id);
         self = this;
         return ChildProcess.exec(repo.command, function(err, result, error) {
           var body, close;

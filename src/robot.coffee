@@ -77,7 +77,7 @@ processIssues = (issues, repo) ->
 
         # 发布函数
         deploy = (id, delayed = no) ->
-            logger.log "deploying #{id}"
+            logger.info "deploying #{id}"
 
             self = this
             ChildProcess.exec repo.command, (err, result, error) ->

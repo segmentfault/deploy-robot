@@ -191,8 +191,8 @@
                     });
                   }
                 }
-                delay(15000, delayDeploy, "/" + repo.user + "/" + repo.name + "/issues/" + issue.number);
               }
+              return delay(15000, delayDeploy, "/" + repo.user + "/" + repo.name + "/issues/" + issue.number);
             });
           };
           return delay(15000, delayDeploy, "/" + repo.user + "/" + repo.name + "/issues/" + issue.number);

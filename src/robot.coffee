@@ -160,7 +160,7 @@ processIssues = (issues, repo) ->
                                             assignee: null
                                             state: 'closed'
                             
-                            delay 15000, delayDeploy, "/#{repo.user}/#{repo.name}/issues/#{issue.number}"
+                        delay 15000, delayDeploy, "/#{repo.user}/#{repo.name}/issues/#{issue.number}"
                 delay 15000, delayDeploy, "/#{repo.user}/#{repo.name}/issues/#{issue.number}"
         else
             github.issues.createComment

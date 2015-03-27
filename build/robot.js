@@ -135,6 +135,7 @@
                 user: repo.user,
                 repo: repo.name,
                 number: issue.number,
+                assignee: null,
                 state: 'closed'
               });
             }

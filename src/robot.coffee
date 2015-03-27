@@ -113,6 +113,7 @@ processIssues = (issues, repo) ->
                             user: repo.user
                             repo: repo.name
                             number: issue.number
+                            assignee: null
                             state: 'closed'
 
         # 及时发布状态

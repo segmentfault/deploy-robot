@@ -144,7 +144,13 @@ processIssues = (issues, repo) ->
                                 logger.info "got comment /#{repo.user}/#{repo.name}/issues/#{issue.number}##{comment.id}"
 
                                 if comment.body.match /^\s*confirm/i
-                                    return deploy "/#{repo.user}/#{repo.name}/issues/#{issue.number}#deploy"
+                                    return github.issues.createComment
+                                        user: repo.user
+                                        repo: repo.name
+                                        number: issue.number
+                                        body: "收到确认信息, 正在上线..."
+                                    , (err) ->
+                                        deploy "/#{repo.user}/#{repo.name}/issues/#{issue.number}#deploy"
                                 else if comment.body.match /^\s*stop/i
                                     logger.info "closing issue /#{repo.user}/#{repo.name}/issues/#{issue.number}"
 

@@ -1,13 +1,28 @@
 {
   "name": "deploy-robot",
   "version": "1.0.0",
-  "description": "",
+  "description": "Deploy robot",
   "main": "build/robot.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SegmentFault/deploy-robot.git"
+  },
+  "keywords": [
+    "deploy", "robot"
+  ],
+  "bin": {
+    "logechod": "./bin/deploy-robot"
+  },
+  "preferGlobal": true,
   "author": "joyqi",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/SegmentFault/deploy-robot/issues"
+  },
+  "homepage": "https://github.com/SegmentFault/deploy-robot",
   "dependencies": {
     "github": "^0.2.3",
     "optimist": "^0.6.1",

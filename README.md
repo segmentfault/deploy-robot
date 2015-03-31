@@ -7,7 +7,7 @@
 特点
 ----
 
-- 与Github深度整合，利用Github API读取相关部署指令，并及时反馈部署情况
+- 与 GitHub 深度整合，利用 GitHub API 读取相关部署指令，并及时反馈部署情况
 - 与人工部署不同的是，自动部署不会疲劳，也不会喊累，你永远可以不停地折腾它
 
 使用方法
@@ -25,21 +25,21 @@ npm install -g deploy-robot
 deploy-robot -c config.json
 ```
 
-config.json文件
+config.json 文件
 --------------
 
-参考目录下地config.json.sample文件
+参考目录下的 config.json.sample 文件
 
 ```javascript
 {
     "username": "",     // 用户名
-    "password": "",     // token，去user/settings申请
+    "password": "",     // token，去 user/settings 申请
 
-    "repos": [          // 需要监听地repo列表
+    "repos": [          // 需要监听地 repo 列表
         {
-            "user": "xxx",      // repo所属用户名
-            "name": "xxx",      // repo名
-            "labels": "xxx",    // 指定issue的label
+            "user": "xxx",      // repo 所属用户名
+            "name": "xxx",      // repo 名
+            "labels": "xxx",    // 指定 issue 的 label
             "command": "xxx",   // 上线脚本的命令
             "confirm": null     // 上线是否需要某人的确认, 默认为空
         }

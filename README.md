@@ -33,7 +33,7 @@ config.json 文件
 ```javascript
 {
     "username": "",     // 用户名
-    "password": "",     // token，去 user/settings 申请
+    "password": "",     // token，去 https://github.com/settings/applications 的 "Personal access tokens" 选项卡点击 "Generate new token"，将获取的字符串填入这里
 
     "repos": [          // 需要监听地 repo 列表
         {

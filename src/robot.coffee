@@ -3,9 +3,12 @@ fs = require 'fs'
 ChildProcess = require 'child_process'
 Github = require 'github'
 winston = require 'winston'
+adapters = ['github']
 argv = require 'optimist'
     .default 'c', 'config.json'
+    .default 't', 'github'
     .argv
+
 
 logger = new winston.Logger
     transports: [
@@ -26,20 +29,24 @@ logger = new winston.Logger
         warn:   'yellow'
         error:  'red'
 
+
 if not fs.existsSync argv.c
-    process.exit 1
+    throw new Error 'Missing config file'
+
+if argv.t not in adapters
+    throw new Error "Adapter #{argv.t} is not exists"
 
 config = JSON.parse fs.readFileSync argv.c
-github = new Github version: '3.0.0'
+adapter = new (require './adapter/' + argv.t) config
 
 
 list = []
-delayedTable = {}
+delayed = {}
 delay = (time, fn, id) ->
-    return if delayedTable[id]?
+    return if delayed[id]?
 
     list.push [Date.now() + time, fn, id]
-    delayedTable[id] = yes
+    delayed[id] = yes
 
 
 setInterval () ->
@@ -50,36 +57,31 @@ setInterval () ->
         [time, fn, id] = cb
         
         if now >= time
-            delete delayedTable[id]
+            delete delayed[id]
             fn()
         else
             list.push cb
 , 5000
 
 
-github.authenticate
-    username: config.username
-    password: config.password
-    type: 'basic'
+setInterval ->
+    logger.info 'fetching issues ...'
+    adapter.scheduler process
+, 15000
 
 
 # 处理条目
-processIssues = (issues, repo) ->
+process = (issues, repo) ->
     issues.forEach (issue) ->
-        logger.info "found deploy issue /#{repo.user}/#{repo.name}/issues/#{issue.number}"
+        adapter.selfAssign repo, issue
+        id = adapter.makeId repo, issue
 
-        logger.info "assigning to self(#{config.username})"
-        github.issues.edit
-            user: repo.user
-            repo: repo.name
-            number: issue.number
-            assignee: config.username
+        logger.info "found #{id}"
 
         # 发布函数
         deploy = (id, delayed = no) ->
             logger.info "deploying #{id}"
 
-            self = this
             ChildProcess.exec repo.command, (err, result, error) ->
                 body = ''
                 close = yes
@@ -88,110 +90,41 @@ processIssues = (issues, repo) ->
                     logger.error err
 
                     if delayed
-                        body += "再次尝试，上线失败\n\n"
+                        body += "Retry failed\n\n"
                     else
                         close = no
-                        body += "上线过程遇到了错误, 请尝试修复它, 我将在五分钟后再次尝试上线一次\n\n"
+                        body += "An exception occurred, I'll try it again later\n\n"
                         delay 300000, (-> deploy id, yes), id
                     
-                    body += "## 控制台输出\n```\n#{result}\n```\n\n" if result.length > 0
-                    body += "## 错误输出\n```\n#{error}\n```\n\n" if error.length > 0
+                    body += "## Console\n```\n#{result}\n```\n\n" if result.length > 0
+                    body += "## Error\n```\n#{error}\n```\n\n" if error.length > 0
                 else
-                    body += "上线成功\n\n"
-                    body += "## 控制台输出\n```\n#{result}\n```\n\n" if result.length > 0
+                    body += "Success\n\n"
+                    body += "## Console\n```\n#{result}\n```\n\n" if result.length > 0
             
                 # 发布报告
-                github.issues.createComment
-                    user: repo.user
-                    repo: repo.name
-                    number: issue.number
-                    body: body
-                , (err) ->
-                    if close
-                        # 关闭issue
-                        github.issues.edit
-                            user: repo.user
-                            repo: repo.name
-                            number: issue.number
-                            assignee: null
-                            state: 'closed'
+                adapter.finish repo, issue, body, close
+
 
         # 及时发布状态
-        logger.info "posting a comment"
+        logger.info "posting comment"
+
         if  repo.confirm?
-            users = repo.confirm.split ','
+            users = if repo.confirm instanceof Array then repo.confirm else repo.confirm.split ','
 
-            github.issues.createComment
-                user: repo.user
-                repo: repo.name
-                number: issue.number
-                body: '正在等待 ' + ((users.map (user) -> '@' + user).join ', ') + ' 的确认'
-            , (err, currentComment) ->
+            adapter.comment repo, issue, 'Waiting for confirmation by ' + ((users.map (user) -> '@' + user).join ', ') "\n\n> Please type `confirm` to confirm or type `stop` to cancel.", (currentComment) ->
                 delayDeploy = ->
-                    self = this
-                    
-                    logger.info "fetching comments from issue /#{repo.user}/#{repo.name}/issues/#{issue.number}"
-                    github.issues.getComments
-                        user: repo.user
-                        repo: repo.name
-                        number: issue.number
-                        per_page: 100
-                    , (err, comments) ->
-                        throw err if err?
-
-                        for comment in comments
-                            if comment.user.login in users and comment.id > currentComment.id
-                                logger.info "got comment /#{repo.user}/#{repo.name}/issues/#{issue.number}##{comment.id}"
-
-                                if comment.body.match /^\s*confirm/i
-                                    return github.issues.createComment
-                                        user: repo.user
-                                        repo: repo.name
-                                        number: issue.number
-                                        body: "收到确认信息, 正在上线..."
-                                    , (err) ->
-                                        deploy "/#{repo.user}/#{repo.name}/issues/#{issue.number}#deploy"
-                                else if comment.body.match /^\s*stop/i
-                                    logger.info "closing issue /#{repo.user}/#{repo.name}/issues/#{issue.number}"
-
-                                    return github.issues.createComment
-                                        user: repo.user
-                                        repo: repo.name
-                                        number: issue.number
-                                        body: "由于 @#{comment.user.login} 终止了上线流程, 本次上线被关闭"
-                                    , (err) ->
-                                        github.issues.edit
-                                            user: repo.user
-                                            repo: repo.name
-                                            number: issue.number
-                                            assignee: null
-                                            state: 'closed'
-                            
-                        delay 15000, delayDeploy, "/#{repo.user}/#{repo.name}/issues/#{issue.number}"
-                delay 15000, delayDeploy, "/#{repo.user}/#{repo.name}/issues/#{issue.number}"
+                    adapter.confirm repo, issue, users, currentComment, (repo, issue) ->
+                        adapter.comment repo, issue, "Confirmation received, deploying ...", ->
+                            deploy "#{id}#deploy"
+                    , (repo, issue, user) ->
+                        adapter.finish repo, issue, "Deployment cancelled by @#{user}", yes
+                    , (repo, issue) ->
+                        delay 15000, delayDeploy, id
+                
+                delay 15000, delayDeploy, id
         else
-            github.issues.createComment
-                user: repo.user
-                repo: repo.name
-                number: issue.number
-                body: '正在上线...'
-            , (err, currentComment) ->
-                throw err if err?
-                deploy "/#{repo.user}/#{repo.name}/issues/#{issue.number}#deploy"
-
-
-setInterval () ->
-    for repo in config.repos
-        do (repo) ->
-            logger.info "fetching repo #{repo.name}"
-            github.issues.repoIssues
-                user: repo.user
-                repo: repo.name
-                labels: repo.labels
-                state: 'open'
-                assignee: 'none'
-            , (err, issues) ->
-                throw err if err?
-                processIssues issues, repo
-, 15000
+            adapter.comment repo, issue, 'Deploying ...', ->
+                deploy "#{id}#deploy"
+                            
 

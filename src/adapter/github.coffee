@@ -5,7 +5,10 @@ class Github
 
     # 初始化
     constructor: (@config) ->
-        @github = new GithubApi version: '3.0.0'
+        @github = new GithubApi
+            version: '3.0.0'
+            timeout: 3000
+
         @github.authenticate
             username: @config.username
             password: @config.password
@@ -25,7 +28,7 @@ class Github
                     assignee: 'none'
                 , (err, issues) ->
                     throw err if err?
-                    cb issues, repo
+                    cb issues, repo if issues.length > 0
 
 
     # 生成id

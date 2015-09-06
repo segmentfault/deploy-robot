@@ -9,7 +9,8 @@
     function Github(config) {
       this.config = config;
       this.github = new GithubApi({
-        version: '3.0.0'
+        version: '3.0.0',
+        timeout: 3000
       });
       this.github.authenticate({
         username: this.config.username,
@@ -36,7 +37,9 @@
               if (err != null) {
                 throw err;
               }
-              return cb(issues, repo);
+              if (issues.length > 0) {
+                return cb(issues, repo);
+              }
             });
           };
         })(this)(repo));

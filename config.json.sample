@@ -8,6 +8,7 @@
             "name": "xxx",
             "labels": "xxx",
             "command": "xxx",
+            "preview": null,
             "confirm": null
         }
     ]

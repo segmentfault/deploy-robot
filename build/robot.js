@@ -128,7 +128,7 @@
         users = repo.confirm instanceof Array ? repo.confirm : repo.confirm.split(',');
         return adapter.comment(repo, issue, 'Waiting for confirmation by ' + ((users.map(function(user) {
           return '@' + user;
-        })).join(', '))("\n\n> Please type `confirm` to confirm or type `stop` to cancel.", function(currentComment) {
+        })).join(', ')) + "\n\n> Please type `confirm` to confirm or type `stop` to cancel.", function(currentComment) {
           var delayDeploy;
           delayDeploy = function() {
             return adapter.confirm(repo, issue, users, currentComment, function(repo, issue) {
@@ -142,7 +142,7 @@
             });
           };
           return delay(15000, delayDeploy, id);
-        }));
+        });
       } else {
         return adapter.comment(repo, issue, 'Deploying ...', function() {
           return deploy("" + id + "#deploy");

@@ -112,7 +112,7 @@ process = (issues, repo) ->
         if  repo.confirm?
             users = if repo.confirm instanceof Array then repo.confirm else repo.confirm.split ','
 
-            adapter.comment repo, issue, 'Waiting for confirmation by ' + ((users.map (user) -> '@' + user).join ', ') "\n\n> Please type `confirm` to confirm or type `stop` to cancel.", (currentComment) ->
+            adapter.comment repo, issue, 'Waiting for confirmation by ' + ((users.map (user) -> '@' + user).join ', ') + "\n\n> Please type `confirm` to confirm or type `stop` to cancel.", (currentComment) ->
                 delayDeploy = ->
                     adapter.confirm repo, issue, users, currentComment, (repo, issue) ->
                         adapter.comment repo, issue, "Confirmation received, deploying ...", ->

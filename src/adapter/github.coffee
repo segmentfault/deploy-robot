@@ -27,7 +27,7 @@ class Github
 
     # 调度程序
     scheduler: (cb) ->
-        for k, repos in @repos
+        for k, repos of @repos
             [user, name] = k.split '/'
 
             do (user, name, repos) =>

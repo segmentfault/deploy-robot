@@ -31,19 +31,19 @@
     }
 
     Github.prototype.scheduler = function(cb) {
-      var k, name, repos, user, _i, _len, _ref, _ref1, _results;
+      var k, name, repos, user, _ref, _ref1, _results;
       _ref = this.repos;
       _results = [];
-      for (repos = _i = 0, _len = _ref.length; _i < _len; repos = ++_i) {
-        k = _ref[repos];
+      for (k in _ref) {
+        repos = _ref[k];
         _ref1 = k.split('/'), user = _ref1[0], name = _ref1[1];
         _results.push((function(_this) {
           return function(user, name, repos) {
-            var data, hash, repo, _j, _len1;
+            var data, hash, repo, _i, _len;
             data = {};
             hash = {};
-            for (_j = 0, _len1 = repos.length; _j < _len1; _j++) {
-              repo = repos[_j];
+            for (_i = 0, _len = repos.length; _i < _len; _i++) {
+              repo = repos[_i];
               data[repo.labels] = [];
               hash[repo.labels] = repo;
             }
@@ -53,21 +53,21 @@
               state: 'open',
               assignee: 'none'
             }, function(err, issues) {
-              var issue, items, label, labels, _k, _l, _len2, _len3, _ref2, _results1;
+              var issue, items, label, labels, _j, _k, _len1, _len2, _ref2, _results1;
               if (err != null) {
                 throw err;
               }
               if (issues.length === 0) {
                 return;
               }
-              for (_k = 0, _len2 = issues.length; _k < _len2; _k++) {
-                issue = issues[_k];
+              for (_j = 0, _len1 = issues.length; _j < _len1; _j++) {
+                issue = issues[_j];
                 for (labels in data) {
                   items = data[labels];
                   labels = ',' + labels + ',';
                   _ref2 = issue.labels;
-                  for (_l = 0, _len3 = _ref2.length; _l < _len3; _l++) {
-                    label = _ref2[_l];
+                  for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+                    label = _ref2[_k];
                     if ((labels.indexOf(',' + label.name + ',')) >= 0) {
                       items.push(issue);
                       break;

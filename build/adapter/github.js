@@ -7,6 +7,7 @@
 
   Github = (function() {
     function Github(config) {
+      var key, repo, _i, _len, _ref;
       this.config = config;
       this.github = new GithubApi({
         version: '3.0.0',
@@ -17,32 +18,76 @@
         password: this.config.password,
         type: 'basic'
       });
+      this.repos = {};
+      _ref = this.config.repos;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        repo = _ref[_i];
+        key = repo.user + '/' + repo.name;
+        if (this.repos[key] == null) {
+          this.repos[key] = [];
+        }
+        this.repos[key].push(repo);
+      }
     }
 
     Github.prototype.scheduler = function(cb) {
-      var repo, _i, _len, _ref, _results;
-      _ref = this.config.repos;
+      var k, name, repos, user, _i, _len, _ref, _ref1, _results;
+      _ref = this.repos;
       _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        repo = _ref[_i];
+      for (repos = _i = 0, _len = _ref.length; _i < _len; repos = ++_i) {
+        k = _ref[repos];
+        _ref1 = k.split('/'), user = _ref1[0], name = _ref1[1];
         _results.push((function(_this) {
-          return function(repo) {
+          return function(user, name, repos) {
+            var data, hash, repo, _j, _len1;
+            data = {};
+            hash = {};
+            for (_j = 0, _len1 = repos.length; _j < _len1; _j++) {
+              repo = repos[_j];
+              data[repo.labels] = [];
+              hash[repo.labels] = repo;
+            }
             return _this.github.issues.repoIssues({
-              user: repo.user,
-              repo: repo.name,
-              labels: repo.labels,
+              user: user,
+              repo: name,
               state: 'open',
               assignee: 'none'
             }, function(err, issues) {
+              var issue, items, label, labels, _k, _l, _len2, _len3, _ref2, _results1;
               if (err != null) {
                 throw err;
               }
-              if (issues.length > 0) {
-                return cb(issues, repo);
+              if (issues.length === 0) {
+                return;
               }
+              for (_k = 0, _len2 = issues.length; _k < _len2; _k++) {
+                issue = issues[_k];
+                for (labels in data) {
+                  items = data[labels];
+                  labels = ',' + labels + ',';
+                  _ref2 = issue.labels;
+                  for (_l = 0, _len3 = _ref2.length; _l < _len3; _l++) {
+                    label = _ref2[_l];
+                    if ((labels.indexOf(',' + label.name + ',')) >= 0) {
+                      items.push(issue);
+                      break;
+                    }
+                  }
+                }
+              }
+              _results1 = [];
+              for (labels in data) {
+                items = data[labels];
+                if (items.length > 0) {
+                  _results1.push(cb(items, hash[labels]));
+                } else {
+                  _results1.push(void 0);
+                }
+              }
+              return _results1;
             });
           };
-        })(this)(repo));
+        })(this)(user, name, repos));
       }
       return _results;
     };

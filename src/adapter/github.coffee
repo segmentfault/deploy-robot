@@ -14,21 +14,50 @@ class Github
             password: @config.password
             type: 'basic'
 
+        @repos = {}
+
+        for repo in @config.repos
+            key = repo.user + '/' + repo.name
+
+            if not @repos[key]?
+                @repos[key] = []
+
+            @repos[key].push repo
+
 
     # 调度程序
     scheduler: (cb) ->
-        for repo in @config.repos
-            do (repo) =>
+        for k, repos in @repos
+            [user, name] = k.split '/'
+
+            do (user, name, repos) =>
+                data = {}
+                hash = {}
+
+                for repo in repos
+                    data[repo.labels] = []
+                    hash[repo.labels] = repo
+
                 # 获取所有相应状态的条目
                 @github.issues.repoIssues
-                    user: repo.user
-                    repo: repo.name
-                    labels: repo.labels
+                    user: user
+                    repo: name
                     state: 'open'
                     assignee: 'none'
                 , (err, issues) ->
                     throw err if err?
-                    cb issues, repo if issues.length > 0
+                    return if issues.length == 0
+
+                    for issue in issues
+                        for labels, items of data
+                            labels = ',' + labels + ','
+                            for label in issue.labels
+                                if (labels.indexOf (',' + label.name + ',')) >= 0
+                                    items.push issue
+                                    break
+
+                    for labels, items of data
+                        cb items, hash[labels] if items.length > 0
 
 
     # 生成id
